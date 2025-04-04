@@ -1,0 +1,240 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>our memory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(to right, #ffecd2 0%, #fcb69f 100%);
+        }
+        /* Dialog box styles */
+        #dialogBox {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-align: center;
+        }
+        /* Green tick animation */
+        .tick-animation {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #4CAF50;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .thank-you {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #4CAF50;
+        }
+        /* New dialog box styles */
+        #newDialogBox {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            text-align: center;
+        }
+        .ok-button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen bg-white p-4">
+    <h1 class="text-xl font-bold mb-4 mt-4">WELCOME to odm 2023-25 gallery</h1>
+    <script>
+        // Set isAdmin for testing purposes
+        localStorage.setItem('isAdmin', 'true'); // Change to 'false' to test non-admin behavior
+    </script>
+    <script>
+        // Set isAdmin for testing purposes
+        localStorage.setItem('isAdmin', 'true'); // Change to 'false' to test non-admin behavior
+    </script>
+    <script>
+        // Set isAdmin for testing purposes
+        localStorage.setItem('isAdmin', 'true'); // Change to 'false' to test non-admin behavior
+    </script>
+    <input type="file" id="fileInput" accept="image/*,video/*" class="hidden" multiple>
+    <script>
+        // Check if the user is logged in with an invite code
+        const isInviteUser = localStorage.getItem('inviteCode') !== null; // Assuming invite code is stored in localStorage
+        const isAdminUser = localStorage.getItem('isAdmin') === 'true'; // Check if the user is an admin
+    </script>
+    <button id="uploadButton" class="fixed bottom-4 right-4 bg-blue-500 text-white p-4 rounded-full shadow-lg">
+        <i class="fas fa-plus"></i>
+    </button>
+    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4 w-full max-w-4xl"></div>
+    
+    <!-- Thank You Dialog Box -->
+    <div id="dialogBox">
+        <div class="tick-animation"></div>
+        <div class="thank-you">Thank You!</div>
+    </div>
+
+    <!-- New Dialog Box -->
+    <div id="newDialogBox">
+        <div class="thank-you">DONE</div>
+        <button class="ok-button" onclick="closeNewDialog()">OK</button>
+    </div>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+        document.getElementById('fileInput').addEventListener('change', (event) => {
+            const files = event.target.files;
+            const confirmation = confirm("Do you want to upload these files?");
+            if (confirmation) {
+                const gallery = document.getElementById('gallery');
+                for (const file of files) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const url = e.target.result;
+                        const element = document.createElement(file.type.startsWith('image/') ? 'img' : 'video');
+                        element.src = url;
+                        element.className = 'w-full h-auto rounded-lg shadow-md';
+                        if (file.type.startsWith('video/')) {
+                            element.controls = true;
+                        } else {
+                            element.onclick = () => {
+                                const fullScreenElement = document.createElement('img');
+                                fullScreenElement.src = url;
+                                fullScreenElement.style.width = '100%';
+                                fullScreenElement.style.height = '100%';
+                                fullScreenElement.style.position = 'fixed';
+                                fullScreenElement.style.top = '0';
+                                fullScreenElement.style.left = '0';
+                                fullScreenElement.style.zIndex = '9999';
+                                fullScreenElement.onclick = () => {
+                                    document.body.removeChild(fullScreenElement);
+                                };
+                                document.body.appendChild(fullScreenElement);
+                            };
+                        }
+                        
+                        // Create delete button only for admin user
+                        if (localStorage.getItem('isAdmin') === 'true') {
+                            const deleteButton = document.createElement('button');
+                            deleteButton.innerHTML = '<i class="fas fa-trash text-red-500"></i>';
+                            deleteButton.className = 'bg-red-500 text-white p-2 rounded';
+                            deleteButton.onclick = () => {
+                                const confirmDelete = confirm("Do you want to delete this item?");
+                                if (confirmDelete) {
+                                    gallery.removeChild(element);
+                                    gallery.removeChild(deleteButton);
+                                    removeFromLocalStorage(url);
+                                }
+                            };
+                            gallery.appendChild(deleteButton);
+                        }
+                        
+                        gallery.appendChild(element);
+                        gallery.appendChild(deleteButton);
+                        saveToLocalStorage(url, file.type);
+                    };
+                    reader.readAsDataURL(file);
+                }
+                // Show thank you dialog box
+                const dialogBox = document.getElementById('dialogBox');
+                dialogBox.style.display = 'block';
+                setTimeout(() => {
+                    dialogBox.style.display = 'none';
+                    // Show new dialog box after the thank you dialog
+                    const newDialogBox = document.getElementById('newDialogBox');
+                    newDialogBox.style.display = 'block';
+                }, 2000); // Hide after 2 seconds
+            }
+        });
+        function closeNewDialog() {
+            const newDialogBox = document.getElementById('newDialogBox');
+            newDialogBox.style.display = 'none';
+        }
+        function saveToLocalStorage(url, type) {
+            const galleryItems = JSON.parse(localStorage.getItem('galleryItems')) || [];
+            galleryItems.push({ url, type });
+            localStorage.setItem('galleryItems', JSON.stringify(galleryItems));
+        }
+        function removeFromLocalStorage(url) {
+            let galleryItems = JSON.parse(localStorage.getItem('galleryItems')) || [];
+            galleryItems = galleryItems.filter(item => item.url !== url);
+            localStorage.setItem('galleryItems', JSON.stringify(galleryItems));
+        }
+        function loadFromLocalStorage() {
+            const galleryItems = JSON.parse(localStorage.getItem('galleryItems')) || [];
+            const gallery = document.getElementById('gallery');
+            for (const item of galleryItems) {
+                const element = document.createElement(item.type.startsWith('image/') ? 'img' : 'video');
+                element.src = item.url;
+                element.className = 'w-full h-auto rounded-lg shadow-md';
+                if (item.type.startsWith('video/')) {
+                    element.controls = true;
+                } else {
+                    element.onclick = () => {
+                        const fullScreenElement = document.createElement('img');
+                        fullScreenElement.src = item.url;
+                        fullScreenElement.style.width = '100%';
+                        fullScreenElement.style.height = '100%';
+                        fullScreenElement.style.position = 'fixed';
+                        fullScreenElement.style.top = '0';
+                        fullScreenElement.style.left = '0';
+                        fullScreenElement.style.zIndex = '9999';
+                        fullScreenElement.onclick = () => {
+                            document.body.removeChild(fullScreenElement);
+                        };
+                        document.body.appendChild(fullScreenElement);
+                    };
+                }
+                
+                // Create delete button for admin user
+                if (localStorage.getItem('isAdmin') === 'true') {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerHTML = '<i class="fas fa-trash text-red-500"></i>';
+                    deleteButton.className = 'bg-red-500 text-white p-2 rounded';
+                    deleteButton.onclick = () => {
+                        const confirmDelete = confirm("Do you want to delete this item?");
+                        if (confirmDelete) {
+                            gallery.removeChild(element);
+                            gallery.removeChild(deleteButton);
+                            removeFromLocalStorage(item.url);
+                        }
+                    };
+                    gallery.appendChild(deleteButton);
+                }
+                
+                gallery.appendChild(element);
+                gallery.appendChild(deleteButton);
+            }
+        }
+        window.onload = loadFromLocalStorage;
+    </script>
+</body>
+</html>
